@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -41,3 +42,27 @@ def file1_exists_on_main(path):
         capture_output=True,
     )
     return result.returncode == 0
+
+
+def main():
+    """Run all checks on the given repository path."""
+    if len(sys.argv) < 2:
+        print("Usage: python autograde.py <path>")
+        sys.exit(1)
+    
+    path = sys.argv[1]
+    
+    checks = [
+        ("is a Git repository", is_git_repository(path)),
+        ("main branch exists", main_branch_exists(path)),
+        ("feature branch exists on remote", feature_branch_on_remote(path)),
+        ("file1.txt exists on main", file1_exists_on_main(path)),
+    ]
+    
+    for description, passed in checks:
+        status = "PASSED" if passed else "FAILED"
+        print(f"{status}: {description}")
+
+
+if __name__ == "__main__":
+    main()
