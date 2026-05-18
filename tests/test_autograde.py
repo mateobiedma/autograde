@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 import pytest
 
-from autograde import is_git_repository, main_branch_exists, feature_branch_on_remote, file1_exists_on_main
+from autograde import is_git_repository, main_branch_exists, feature_branch_on_remote, file1_exists_on_main, is_valid_github_url
 
 
 @pytest.fixture
@@ -170,3 +170,52 @@ class TestFile1Exists:
         with tempfile.TemporaryDirectory() as tmpdir:
             repo_path = Path(tmpdir)
             assert file1_exists_on_main(repo_path) is False
+
+
+class TestIsValidGitHubUrl:
+    """Tests for validating GitHub URLs."""
+    
+    def test_valid_github_url(self):
+        """Test that valid GitHub URLs are accepted."""
+        assert is_valid_github_url("https://github.com/owner/repo") is True
+    
+    def test_valid_github_url_with_hyphen(self):
+        """Test that GitHub URLs with hyphens in names are accepted."""
+        assert is_valid_github_url("https://github.com/my-owner/my-repo") is True
+    
+    def test_valid_github_url_with_underscore(self):
+        """Test that GitHub URLs with underscores in names are accepted."""
+        assert is_valid_github_url("https://github.com/my_owner/my_repo") is True
+    
+    def test_valid_github_url_with_dot(self):
+        """Test that GitHub URLs with dots in repo names are accepted."""
+        assert is_valid_github_url("https://github.com/owner/my.repo") is True
+    
+    def test_invalid_github_url_http(self):
+        """Test that HTTP URLs are rejected."""
+        assert is_valid_github_url("http://github.com/owner/repo") is False
+    
+    def test_invalid_github_url_no_protocol(self):
+        """Test that URLs without protocol are rejected."""
+        assert is_valid_github_url("github.com/owner/repo") is False
+    
+    def test_invalid_github_url_wrong_domain(self):
+        """Test that non-GitHub URLs are rejected."""
+        assert is_valid_github_url("https://gitlab.com/owner/repo") is False
+    
+    def test_invalid_github_url_missing_repo(self):
+        """Test that URLs without repo name are rejected."""
+        assert is_valid_github_url("https://github.com/owner") is False
+    
+    def test_invalid_github_url_missing_owner(self):
+        """Test that URLs without owner are rejected."""
+        assert is_valid_github_url("https://github.com/repo") is False
+    
+    def test_invalid_github_url_empty_string(self):
+        """Test that empty string is rejected."""
+        assert is_valid_github_url("") is False
+    
+    def test_invalid_github_url_with_invalid_chars(self):
+        """Test that URLs with invalid characters are rejected."""
+        assert is_valid_github_url("https://github.com/owner@/repo") is False
+        assert is_valid_github_url("https://github.com/owner/repo!") is False

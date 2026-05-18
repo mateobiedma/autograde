@@ -4,7 +4,14 @@ import tempfile
 import shutil
 import os
 import stat
+import re
 from pathlib import Path
+
+
+def is_valid_github_url(url):
+    """Check if the URL is a valid GitHub URL."""
+    pattern = r"^https://github\.com/[a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+$"
+    return re.match(pattern, url) is not None
 
 
 def is_git_repository(path):
@@ -55,30 +62,31 @@ def _handle_remove_error(func, path, exc):
 
 
 def main():
-    """Run all checks on the given repository path or GitHub URL."""
+    """Run all checks on the given GitHub URL."""
     if len(sys.argv) < 2:
-        print("Usage: python autograde.py <path|github-url>")
+        print("Usage: python autograde.py <github-url>")
         sys.exit(1)
     
     argument = sys.argv[1]
+    
+    # Validate GitHub URL
+    if not is_valid_github_url(argument):
+        print("Error: Invalid GitHub URL. Please provide a URL in the format: https://github.com/owner/repo")
+        sys.exit(1)
+    
     temp_dir = None
     
     try:
-        # Check if argument is a URL
-        if argument.startswith("http://") or argument.startswith("https://"):
-            # Clone to temporary directory
-            temp_dir = tempfile.mkdtemp()
-            result = subprocess.run(
-                ["git", "clone", argument, temp_dir],
-                capture_output=True,
-            )
-            if result.returncode != 0:
-                print("FAILED: Could not clone repository")
-                return
-            path = temp_dir
-        else:
-            # Use local path
-            path = argument
+        # Clone to temporary directory
+        temp_dir = tempfile.mkdtemp()
+        result = subprocess.run(
+            ["git", "clone", argument, temp_dir],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            print("FAILED: Could not clone repository")
+            return
+        path = temp_dir
         
         checks = [
             ("is a Git repository", is_git_repository(path)),
